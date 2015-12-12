@@ -8,14 +8,18 @@ public class Move : MonoBehaviour {
 	public int direction = 1;
 	public float jumpForce = 400f;
 
-	const float groundedRadius = .2f;
-
 	[SerializeField] private GameObject deadText;
 
 	private bool grounded;
 	private Transform groundCheck;
 	private Transform ceilingCheck;
 	[SerializeField] private LayerMask whatIsGround;
+	const float groundedRadius = .2f;
+
+	[SerializeField] private GameObject bullet;
+	[SerializeField] private GameObject gunPipe;
+	private float fireRate = 0;
+	float timeToFire = 0;
 
 	private Rigidbody2D rigidbody;
 
@@ -43,6 +47,17 @@ public class Move : MonoBehaviour {
 			grounded = false;
 			rigidbody.AddForce(new Vector2(0f, jumpForce));
 		}
+
+		if (fireRate == 0) {
+			if (Input.GetButtonDown ("Fire1")) {
+				Fire ();
+			}
+		} else {
+			if (Input.GetButton ("Fire1") && Time.time > timeToFire) {
+				timeToFire = Time.time + 1 / fireRate;
+				Fire ();
+			}
+		}
 	}
 
 	void OnCollisionEnter2D(Collision2D coll) {
@@ -52,6 +67,10 @@ public class Move : MonoBehaviour {
 			Debug.Log ("You just kicked the bucket");
 			Die ();
 		}
+	}
+
+	private void Fire() {
+		Instantiate (bullet, gunPipe.transform.position, Quaternion.identity);
 	}
 
 	private void Die() {
