@@ -2,11 +2,10 @@
 using System.Collections;
 
 public class Move : MonoBehaviour {
-	[SerializeField] private GameObject startingPosition;
-
-	public float speed = 10.0f;
-	public int direction = 1;
-	public float jumpForce = 400f;
+	private float speed = 5.0f;
+	private int direction = 1;
+	private float jumpForce = 400f;
+	private float knockbackForce = 10f;
 
 	[SerializeField] private GameObject deadText;
 
@@ -19,14 +18,16 @@ public class Move : MonoBehaviour {
 	[SerializeField] private GameObject bullet;
 	[SerializeField] private GameObject gunPipe;
 	private float fireRate = 0;
-	float timeToFire = 0;
+	private float timeToFire = 0;
 
 	private Rigidbody2D rigidbody;
+	private SpriteRenderer spriteRenderer;
 
 	private void Awake() {
 		groundCheck = transform.Find("GroundCheck");
 		ceilingCheck = transform.Find("CeilingCheck");
 		rigidbody = GetComponent<Rigidbody2D> ();
+		spriteRenderer = GetComponent<SpriteRenderer> ();
 	}
 
 	private void FixedUpdate() {
@@ -43,17 +44,20 @@ public class Move : MonoBehaviour {
 		var move = new Vector3(1, 0, 0);
 		transform.position += move * speed * direction * Time.deltaTime;
 
-		if (grounded && Input.GetKey (KeyCode.Space)) {
+		var yAngle = direction < 0 ? 180 : 0;
+		transform.eulerAngles = new Vector3 (0, yAngle, 0);
+
+		if (grounded && Input.GetKey (KeyCode.A)) {
 			grounded = false;
 			rigidbody.AddForce(new Vector2(0f, jumpForce));
 		}
 
 		if (fireRate == 0) {
-			if (Input.GetButtonDown ("Fire1")) {
+			if (Input.GetKeyDown (KeyCode.S)) {
 				Fire ();
 			}
 		} else {
-			if (Input.GetButton ("Fire1") && Time.time > timeToFire) {
+			if (Input.GetKey (KeyCode.S) && Time.time > timeToFire) {
 				timeToFire = Time.time + 1 / fireRate;
 				Fire ();
 			}
@@ -65,12 +69,21 @@ public class Move : MonoBehaviour {
 			direction = -direction;
 		} else if (coll.gameObject.tag == "Enemy") {
 			Debug.Log ("You just kicked the bucket");
-			Die ();
+
+			// Determine which side the enemy is coming from
+			bool isFromRight = coll.collider.attachedRigidbody.transform.position.x >= rigidbody.transform.position.x;
+			if (isFromRight) {
+				rigidbody.AddForce (new Vector2 (-knockbackForce, 5f), ForceMode2D.Impulse);
+			} else {
+				rigidbody.AddForce (new Vector2 (knockbackForce, 5f), ForceMode2D.Impulse);
+			}
+
+			// Die ();
 		}
 	}
 
 	private void Fire() {
-		Instantiate (bullet, gunPipe.transform.position, Quaternion.identity);
+		Instantiate (bullet, gunPipe.transform.position, gunPipe.transform.rotation);
 	}
 
 	private void Die() {

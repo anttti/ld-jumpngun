@@ -17,6 +17,10 @@ public class EnemyMove : MonoBehaviour {
 		if (!isMoving) {
 			return;
 		}
+
+		var yAngle = direction < 0 ? 180 : 0;
+		transform.eulerAngles = new Vector3 (0, yAngle, 0);
+
 		var move = new Vector3(1, 0, 0);
 		transform.position += move * speed * direction * Time.deltaTime;
 	}
